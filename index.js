@@ -3,6 +3,7 @@ const { Telegraf, Markup } = require('telegraf');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 const INSTAGRAM_URL = process.env.INSTAGRAM_URL || 'https://www.instagram.com/aziboyevsh/';
+const FACEBOOK_URL = process.env.FACEBOOK_URL || 'https://www.facebook.com/';
 const CHANNEL_ID = process.env.CHANNEL_ID;
 
 // Xotirada foydalanuvchi qachon /start bosganini saqlash
@@ -28,11 +29,11 @@ bot.start((ctx) => {
     userStartTimes.set(userId, Date.now());
 
     ctx.reply(
-        `Salom, ${ctx.from.first_name}! 👋\n\nKanalimizga ulanish uchun avval bizning Instagram sahifamizga obuna bo'lishingiz kerak.\n\nPastdagi <b>📸 Instagram sahifaga o'tish</b> tugmasi orqali sahifaga o'ting va obuna bo'ling!\nShundan so'ng <b>✅ Obuna bo'ldim</b> tugmasini bosing.`,
+        `Salom, ${ctx.from.first_name}! 👋\n\nKanalimizga ulanish uchun avval bizning Instagram va Facebook sahifalarimizga obuna bo'lishingiz kerak.\n\nPastdagi <b>📸 Instagram</b> va <b>📘 Facebook</b> tugmalari orqali sahifalarga o'ting va obuna bo'ling!\nShundan so'ng <b>✅ Obuna bo'ldim</b> tugmasini bosing.`,
         {
             parse_mode: 'HTML',
             ...Markup.inlineKeyboard([
-                [Markup.button.url('📸 Instagram sahifaga o\'tish', INSTAGRAM_URL)],
+                [Markup.button.url('📸 Instagram', INSTAGRAM_URL), Markup.button.url('📘 Facebook', FACEBOOK_URL)],
                 [Markup.button.callback('✅ Obuna bo\'ldim', 'check_subscription')]
             ])
         }
@@ -57,7 +58,7 @@ bot.action('check_subscription', async (ctx) => {
     if (timePassed < 5) {
         // Obuna bo'lishga ulgurmadi (vaqt kam ketdi)
         return ctx.answerCbQuery(
-            "❌ Siz obuna bo'lishga ulgurmadingiz!\nIltimos, avval Instagram sahifaga o'ting va obuna tugmasini bosing.",
+            "❌ Siz obuna bo'lishga ulgurmadingiz!\nIltimos, avval Instagram va Facebook sahifalarimizga o'ting va obuna tugmasini bosing.",
             { show_alert: true }
         );
     }
