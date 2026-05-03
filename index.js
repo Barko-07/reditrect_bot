@@ -71,29 +71,30 @@ bot.action('check_subscription', async (ctx) => {
         // "Tekshirilmoqda" jarayonini simulyatsiya qilish
         await ctx.editMessageText("⏳ <i>Obunangiz tekshirilmoqda... Iltimos kuting.</i>", { parse_mode: 'HTML' });
         
-        setTimeout(async () => {
-            try {
-                // Foydalanuvchi uchun bir martalik (member_limit: 1) havola yaratish
-                const inviteLink = await ctx.telegram.createChatInviteLink(CHANNEL_ID, {
-                    name: `Bot orqali: ${ctx.from.first_name}`,
-                    member_limit: 1, // Maksimal 1 marta ishlatiladi
-                    expire_date: Math.floor(Date.now() / 1000) + (60 * 60 * 24) // 1 kunda eskiradi
-                });
+        // Vercel uchun server o'chib qolmasligi uchun "await" qilamiz
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+        try {
+            // Foydalanuvchi uchun bir martalik (member_limit: 1) havola yaratish
+            const inviteLink = await ctx.telegram.createChatInviteLink(CHANNEL_ID, {
+                name: `Bot orqali: ${ctx.from.first_name}`,
+                member_limit: 1, // Maksimal 1 marta ishlatiladi
+                expire_date: Math.floor(Date.now() / 1000) + (60 * 60 * 24) // 1 kunda eskiradi
+            });
 
-                await ctx.editMessageText(
-                    `🎉 <b>Tabriklaymiz, obunangiz tasdiqlandi!</b>\n\nPastdagi yopiq havola orqali asosiy kanalga kirishingiz mumkin.\n\n⚠️ <i>Eslatma: Ushbu havola faqat siz uchun va faqat 1 marta ishlaydi!</i>`,
-                    {
-                        parse_mode: 'HTML',
-                        ...Markup.inlineKeyboard([
-                            [Markup.button.url('🚀 Kanalga kirish', inviteLink.invite_link)]
-                        ])
-                    }
-                );
-            } catch (err) {
-                console.error("Havola yaratishda xatolik:", err);
-                ctx.editMessageText("❌ <b>Kanal havolasini yaratishda xatolik yuz berdi.</b>\nBot kanalda 'Admin' ekanligini va havolalar yaratish xuquqi borligini tekshiring.", { parse_mode: 'HTML' });
-            }
-        }, 3000); // 3 soniyalik simulyatsiya tekshiruvi
+            await ctx.editMessageText(
+                `🎉 <b>Tabriklaymiz, obunangiz tasdiqlandi!</b>\n\nPastdagi yopiq havola orqali asosiy kanalga kirishingiz mumkin.\n\n⚠️ <i>Eslatma: Ushbu havola faqat siz uchun va faqat 1 marta ishlaydi!</i>`,
+                {
+                    parse_mode: 'HTML',
+                    ...Markup.inlineKeyboard([
+                        [Markup.button.url('🚀 Kanalga kirish', inviteLink.invite_link)]
+                    ])
+                }
+            );
+        } catch (err) {
+            console.error("Havola yaratishda xatolik:", err);
+            ctx.editMessageText("❌ <b>Kanal havolasini yaratishda xatolik yuz berdi.</b>\nBot kanalda 'Admin' ekanligini va havolalar yaratish xuquqi borligini tekshiring.", { parse_mode: 'HTML' });
+        }
     } catch (err) {
         console.error(err);
     }
@@ -114,12 +115,25 @@ bot.on('message', (ctx) => {
     ctx.reply("Kechirasiz, men faqat tugmalar orqali ishlayman. Iltimos, /start buyrug'ini bosib qaytadan urinib ko'ring.");
 });
 
-bot.launch().then(() => {
-    console.log("=================================");
-    console.log("🚀 Bot muvaffaqiyatli ishga tushdi!");
-    console.log("=================================");
-});
+// Vercel uchun export
+module.exports = async (req, res) => {
+    try {
+        await bot.handleUpdate(req.body, res);
+    } catch (err) {
+        console.error("Vercel Webhook Error:", err);
+        res.status(500).send("Error!");
+    }
+};
 
-// Enable graceful stop
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));
+// Lokal kompyuterda ishga tushirish uchun
+if (require.main === module) {
+    bot.launch().then(() => {
+        console.log("=================================");
+        console.log("🚀 Bot muvaffaqiyatli lokal rejimda ishga tushdi!");
+        console.log("=================================");
+    });
+
+    // Enable graceful stop
+    process.once('SIGINT', () => bot.stop('SIGINT'));
+    process.once('SIGTERM', () => bot.stop('SIGTERM'));
+}
